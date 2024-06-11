@@ -9,21 +9,24 @@ import {
   OutlinedInput,
   SelectChangeEvent,
 } from "@mui/material";
-import { ModelCount } from "../../types";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setSelectedModels, removeModel } from "../../slices/stockSlice";
 
-interface ModelSelectProps {
-  models: ModelCount[];
-  selectedModels: string[];
-  onModelChange: (event: SelectChangeEvent<string[]>) => void;
-  onDeleteModel: (model: string) => void;
-}
+export const ModelSelect: React.FC = () => {
+  const dispatch = useDispatch();
+  const { models, selectedModels } = useSelector(
+    (state: RootState) => state.stock
+  );
 
-export const ModelSelect: React.FC<ModelSelectProps> = ({
-  models,
-  selectedModels,
-  onModelChange,
-  onDeleteModel,
-}) => {
+  const handleModelChange = (event: SelectChangeEvent<string[]>) => {
+    dispatch(setSelectedModels(event.target.value as string[]));
+  };
+
+  const handleDeleteModel = (model: string) => {
+    dispatch(removeModel(model));
+  };
+
   return (
     <FormControl sx={{ m: 1, minWidth: 300 }}>
       <InputLabel>Выберите модели</InputLabel>
@@ -39,7 +42,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
         }}
         multiple
         value={selectedModels}
-        onChange={onModelChange}
+        onChange={handleModelChange}
         MenuProps={{
           PaperProps: {
             sx: {
@@ -59,7 +62,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
                 key={value}
                 label={value}
                 onMouseDown={(event) => event.stopPropagation()}
-                onDelete={() => onDeleteModel(value)}
+                onDelete={() => handleDeleteModel(value)}
                 sx={{ m: 0.5 }}
               />
             ))}

@@ -1,18 +1,19 @@
 import React from "react";
 import { Box, Chip } from "@mui/material";
-import { MarkCount } from "../../types";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setSelectedMark } from "../../slices/stockSlice";
 
-interface MarkPanelProps {
-  marks: MarkCount[];
-  selectedMark: string;
-  onMarkClick: (mark: string) => void;
-}
+export const MarkPanel: React.FC = () => {
+  const dispatch = useDispatch();
+  const { marks, selectedMark } = useSelector(
+    (state: RootState) => state.stock
+  );
 
-export const MarkPanel: React.FC<MarkPanelProps> = ({
-  marks,
-  selectedMark,
-  onMarkClick,
-}) => {
+  const handleMarkClick = (mark: string) => {
+    dispatch(setSelectedMark(mark));
+  };
+
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", mb: 2 }}>
       {marks.map((markCount) => (
@@ -21,7 +22,7 @@ export const MarkPanel: React.FC<MarkPanelProps> = ({
           label={`${markCount.mark} (${markCount.count})`}
           clickable
           color={selectedMark === markCount.mark ? "primary" : "default"}
-          onClick={() => onMarkClick(markCount.mark)}
+          onClick={() => handleMarkClick(markCount.mark)}
           sx={{ m: 0.5 }}
         />
       ))}

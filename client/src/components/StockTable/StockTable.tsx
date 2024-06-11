@@ -10,21 +10,22 @@ import {
   Pagination,
   Box,
 } from "@mui/material";
-import { Stock } from "../../types";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
 interface StockTableProps {
-  data: Stock[];
   page: number;
   rowsPerPage: number;
   onPageChange: (event: React.ChangeEvent<unknown>, newPage: number) => void;
 }
 
 export const StockTable: React.FC<StockTableProps> = ({
-  data,
   page,
   rowsPerPage,
   onPageChange,
 }) => {
+  const { data } = useSelector((state: RootState) => state.stock);
+
   const columns = [
     { id: "_id", label: "ID" },
     { id: "markModel", label: "Марка/Модель" },

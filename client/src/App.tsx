@@ -1,96 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { Box, SelectChangeEvent } from "@mui/material";
-import { MarkPanel } from "../src/components/MarkPanel/MarkPanel";
-import { ModelSelect } from "../src/components/ModelSelect/ModelSelect";
+import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, AppDispatch } from "./redux/store";
+import { fetchMarks, fetchModels, fetchData } from "./slices/stockSlice";
+import { MarkPanel } from "./components/MarkPanel/MarkPanel";
+import { ModelSelect } from "./components/ModelSelect/ModelSelect";
 import { StockTable } from "./components/StockTable/StockTable";
-import { Stock, MarkCount, ModelCount } from "./types";
 
 const App: React.FC = () => {
-  const [data, setData] = useState<Stock[]>([]);
-  const [marks, setMarks] = useState<MarkCount[]>([]);
-  const [models, setModels] = useState<ModelCount[]>([]);
-  const [selectedMark, setSelectedMark] = useState<string>("");
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [page, setPage] = useState<number>(1);
-  const [rowsPerPage] = useState<number>(20);
+  const dispatch = useDispatch<AppDispatch>();
+  const { selectedMark, selectedModels } = useSelector(
+    (state: RootState) => state.stock
+  );
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 20;
 
   useEffect(() => {
-    fetchMarks();
-  }, []);
+    dispatch(fetchMarks());
+  }, [dispatch]);
 
   useEffect(() => {
     if (selectedMark) {
-      fetchModels(selectedMark);
-      fetchData(selectedMark, selectedModels);
+      dispatch(fetchModels(selectedMark));
+      dispatch(fetchData({ mark: selectedMark, models: selectedModels }));
     }
-  }, [selectedMark, selectedModels]);
-
-  const fetchMarks = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/marks");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const jsonData: MarkCount[] = await response.json();
-      setMarks(jsonData);
-      if (jsonData.length > 0) {
-        setSelectedMark(jsonData[0].mark);
-      }
-    } catch (error) {
-      console.error("Error fetching marks:", error);
-    }
-  };
-
-  const fetchModels = async (mark: string) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/models?mark=${mark}`
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const jsonData: ModelCount[] = await response.json();
-      setModels(jsonData);
-    } catch (error) {
-      console.error("Error fetching models:", error);
-    }
-  };
-
-  const fetchData = async (mark: string, models: string[]) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/stock?mark=${mark}&models=${models.join(
-          ","
-        )}`
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const jsonData: Stock[] = await response.json();
-      setData(jsonData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  const handleMarkClick = (mark: string) => {
-    setSelectedMark(mark);
-    setSelectedModels([]);
-  };
-
-  const handleModelChange = (event: SelectChangeEvent<string[]>) => {
-    setSelectedModels(event.target.value as string[]);
-  };
-
-  const handleDeleteModel = (model: string) => {
-    setSelectedModels((prevSelectedModels) =>
-      prevSelectedModels.filter((m) => m !== model)
-    );
-  };
-
-  const filteredData = data.filter(
-    (item) => selectedModels.length === 0 || selectedModels.includes(item.model)
-  );
+  }, [selectedMark, selectedModels, dispatch]);
 
   const handleChangePage = (
     event: React.ChangeEvent<unknown>,
@@ -101,19 +34,9 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <MarkPanel
-        marks={marks}
-        selectedMark={selectedMark}
-        onMarkClick={handleMarkClick}
-      />
-      <ModelSelect
-        models={models}
-        selectedModels={selectedModels}
-        onModelChange={handleModelChange}
-        onDeleteModel={handleDeleteModel}
-      />
+      <MarkPanel />
+      <ModelSelect />
       <StockTable
-        data={filteredData}
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
@@ -121,4 +44,5 @@ const App: React.FC = () => {
     </div>
   );
 };
+
 export default App;
