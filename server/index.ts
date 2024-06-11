@@ -1,9 +1,11 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import { MongoClient } from "mongodb";
 import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const port = 5000;
+const uri =
+  "mongodb://hrTest:hTy785JbnQ5@mongo0.maximum.expert:27423/?authSource=hrTest&replicaSet=ReplicaSet&readPreference=primary";
 
 app.use(
   cors({
@@ -12,154 +14,78 @@ app.use(
   })
 );
 
-const uri =
-  "mongodb://hrTest:hTy785JbnQ5@mongo0.maximum.expert:27423/?authSource=hrTest&replicaSet=ReplicaSet&readPreference=primary";
-const client = new MongoClient(uri, {
-  connectTimeoutMS: 10000,
-  serverSelectionTimeoutMS: 10000,
-});
+const client = new MongoClient(uri);
 
-async function connectToMongo() {
-  try {
-    await client.connect();
-    console.log("Connected to MongoDB");
+client
+  .connect()
+  .then(() => {
     const db = client.db("hrTest");
     const collection = db.collection("stock");
 
-    app.get("/api/stock", async (req: Request, res: Response) => {
+    app.get("/api/marks", async (req, res) => {
       try {
-        console.log("Fetching stock data...");
-        const { mark, models } = req.query;
-        let query: any = {};
-        if (mark) query.mark = mark;
-
-        if (models) query.model = { $in: (models as string).split(",") };
-
-        const result = await collection.find(query).toArray();
-        console.log("Stock data:", result);
-        res.json(result);
-      } catch (err) {
-        console.error("Error fetching stock data:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    });
-
-    app.get("/api/models", async (req: Request, res: Response) => {
-      try {
-        console.log("Fetching models data...");
-        const { mark } = req.query;
-        const query = mark ? { mark } : {};
-        const result = await collection
-          .aggregate([
-            { $match: query },
-            { $group: { _id: "$model", count: { $sum: 1 } } },
-            { $project: { _id: 0, model: "$_id", count: 1 } },
-            { $sort: { model: 1 } },
-          ])
-          .toArray();
-        console.log("Models data:", result);
-        res.json(result);
-      } catch (err) {
-        console.error("Error fetching models data:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    });
-
-    app.get("/api/marks", async (req: Request, res: Response) => {
-      try {
-        console.log("Fetching marks data...");
-        const result = await collection
+        const marks = await collection
           .aggregate([
             { $group: { _id: "$mark", count: { $sum: 1 } } },
-            { $project: { _id: 0, mark: "$_id", count: 1 } },
-            { $sort: { mark: 1 } },
+            { $sort: { _id: 1 } },
+            { $project: { mark: "$_id", count: 1, _id: 0 } },
           ])
           .toArray();
-        console.log("Marks data:", result);
-        res.json(result);
-      } catch (err) {
-        console.error("Error fetching marks data:", err);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.json(marks);
+      } catch (error) {
+        console.error("Error fetching marks:", error);
+        res.status(500).json({ error: "Error fetching marks" });
       }
     });
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    app.get("/api/stock", async (req, res) => {
+      const { mark, models } = req.query;
+
+      if (!mark) {
+        return res.status(400).json({ error: "Mark is required" });
+      }
+
+      const query: any = { mark };
+      if (models) {
+        query.model = { $in: (models as string).split(",") };
+      }
+
+      try {
+        const stock = await collection.find(query).toArray();
+        res.json(stock);
+      } catch (error) {
+        console.error("Error fetching stock:", error);
+        res.status(500).json({ error: "Error fetching stock" });
+      }
     });
-  } catch (err) {
-    console.error("Failed to connect to MongoDB", err);
-    setTimeout(connectToMongo, 5000);
-  }
-}
 
-connectToMongo();
+    app.get("/api/models", async (req, res) => {
+      const { mark } = req.query;
 
-// import express, { Request, Response } from 'express';
-// import { MongoClient } from 'mongodb';
-// import cors from 'cors';
+      if (!mark) {
+        return res.status(400).json({ error: "Mark is required" });
+      }
 
-// const app = express();
-// const PORT = process.env.PORT || 5000;
-// app.use(
-//   cors({
-//     origin: "http://localhost:3000",
-//     credentials: true,
-//   })
-// );
+      try {
+        const models = await collection
+          .aggregate([
+            { $match: { mark } },
+            { $group: { _id: "$model", count: { $sum: 1 } } },
+            { $sort: { _id: 1 } },
+            { $project: { model: "$_id", count: 1, _id: 0 } },
+          ])
+          .toArray();
+        res.json(models);
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        res.status(500).json({ error: "Error fetching models" });
+      }
+    });
 
-// const uri = 'mongodb://hrTest:hTy785JbnQ5@mongo0.maximum.expert:27423/?authSource=hrTest&replicaSet=ReplicaSet&readPreference=primary';
-// const client = new MongoClient(uri, {
-//   connectTimeoutMS: 10000,
-//   serverSelectionTimeoutMS: 10000
-// });
-
-// async function connectToMongo() {
-//   try {
-//     await client.connect();
-//     console.log('Connected to MongoDB');
-//     const db = client.db('hrTest');
-//     const collection = db.collection('stock');
-//     app.get('/api/stock', async (req: Request, res: Response) => {
-//       try {
-//         const result = await collection.find().toArray();
-//         res.json(result);
-//       } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//       }
-//     });
-
-//     app.get('/api/models', async (req: Request, res: Response) => {
-//       try {
-//         const result = await collection.aggregate([
-//           {
-//             $group: {
-//               _id: '$model',
-//               count: { $sum: 1 }
-//             }
-//           },
-//           {
-//             $project: {
-//               _id: 0,
-//               model: '$_id',
-//               count: 1
-//             }
-//           }
-//         ]).toArray();
-//         res.json(result);
-//       } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//       }
-//     });
-
-//     app.listen(PORT, () => {
-//       console.log(`Server is running on port ${PORT}`);
-//     });
-//   } catch (err) {
-//     console.error('Failed to connect to MongoDB', err);
-//     setTimeout(connectToMongo, 5000);
-//   }
-// }
-
-// connectToMongo();
+    app.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error);
+  });

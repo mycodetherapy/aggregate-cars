@@ -80,7 +80,6 @@ const App: React.FC = () => {
 
   const handleModelChange = (event: SelectChangeEvent<string[]>) => {
     setSelectedModels(event.target.value as string[]);
-    //setSelectedModels(value);
   };
 
   const handleDeleteModel = (model: string) => {
