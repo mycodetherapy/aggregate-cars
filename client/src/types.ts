@@ -1,3 +1,4 @@
+import { AutocompleteGetTagProps } from "@mui/material";
 export interface Stock {
   _id: string;
   mark: string;
@@ -22,4 +23,8 @@ export interface ModelCount {
 export interface MarkCount {
   mark: string;
   count: number;
+}
+
+export interface TagProps extends ReturnType<AutocompleteGetTagProps> {
+  label: string;
 }

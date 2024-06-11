@@ -1,17 +1,31 @@
 import React from "react";
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  Box,
-  OutlinedInput,
-  SelectChangeEvent,
-} from "@mui/material";
+import { useAutocomplete } from "@mui/base/useAutocomplete";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../redux/store";
 import { setSelectedModels, removeModel } from "../../slices/stockSlice";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+  InputWrapper,
+  Label,
+  Listbox,
+  Root,
+  StyledTag,
+} from "./ModelSelectStyles";
+import { TagProps } from "../../types";
+interface GetOptionProps extends React.HTMLAttributes<HTMLLIElement> {
+  key: string;
+}
+
+export function Tag(props: TagProps) {
+  const { label, onDelete, ...other } = props;
+  return (
+    <div {...other}>
+      <span>{label}</span>
+      <CloseIcon onClick={onDelete} />
+    </div>
+  );
+}
 
 export const ModelSelect: React.FC = () => {
   const dispatch = useDispatch();
@@ -19,62 +33,60 @@ export const ModelSelect: React.FC = () => {
     (state: RootState) => state.stock
   );
 
-  const handleModelChange = (event: SelectChangeEvent<string[]>) => {
-    dispatch(setSelectedModels(event.target.value as string[]));
+  const handleModelChange = (event: any, value: string[]) => {
+    dispatch(setSelectedModels(value));
   };
 
-  const handleDeleteModel = (model: string) => {
-    dispatch(removeModel(model));
-  };
+  const {
+    getRootProps,
+    getInputLabelProps,
+    getInputProps,
+    getTagProps,
+    getListboxProps,
+    getOptionProps,
+    groupedOptions,
+    value,
+    focused,
+    setAnchorEl,
+  } = useAutocomplete({
+    id: "customized-hook",
+    multiple: true,
+    options: models.map((modelCount) => modelCount.model),
+    getOptionLabel: (option) => option,
+    value: selectedModels,
+    onChange: (event, newValue) => handleModelChange(event, newValue),
+  });
 
   return (
-    <FormControl sx={{ m: 1, minWidth: 300 }}>
-      <InputLabel>Выберите модели</InputLabel>
-      <Select
-        sx={{
-          "& .MuiSelect-select": {
-            padding: "0px 6px",
-            minHeight: 3,
-          },
-          "&.MuiInputBase-root": {
-            minHeight: "40px",
-          },
-        }}
-        multiple
-        value={selectedModels}
-        onChange={handleModelChange}
-        MenuProps={{
-          PaperProps: {
-            sx: {
-              "&.MuiPaper-root": {
-                top: "144px !important",
-              },
-              "&.MuiSelect-select": {
-                padding: "0px !important",
-              },
-            },
-          },
-        }}
-        renderValue={(selected) => (
-          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
-            {(selected as string[]).map((value) => (
-              <Chip
-                key={value}
-                label={value}
-                onMouseDown={(event) => event.stopPropagation()}
-                onDelete={() => handleDeleteModel(value)}
-                sx={{ m: 0.5 }}
-              />
-            ))}
-          </Box>
-        )}
-      >
-        {models.map((modelCount) => (
-          <MenuItem key={modelCount.model} value={modelCount.model}>
-            {modelCount.model} ({modelCount.count})
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+    <Root>
+      <div {...getRootProps()}>
+        <Label {...getInputLabelProps()}>Выберите модели</Label>
+        <InputWrapper ref={setAnchorEl} className={focused ? "focused" : ""}>
+          {value.map((option: string, index: number) => {
+            const { key, ...tagProps } = getTagProps({ index });
+            return <StyledTag key={key} {...tagProps} label={option} />;
+          })}
+          <input {...getInputProps()} />
+        </InputWrapper>
+      </div>
+      {groupedOptions.length > 0 ? (
+        <Listbox {...getListboxProps()}>
+          {groupedOptions.map((option, index) => {
+            if (typeof option === "string") {
+              const { key, ...optionProps } = getOptionProps({
+                option,
+                index,
+              }) as GetOptionProps;
+              return (
+                <li key={key} {...optionProps}>
+                  <span>{option}</span>
+                  <CheckIcon fontSize="small" />
+                </li>
+              );
+            }
+          })}
+        </Listbox>
+      ) : null}
+    </Root>
   );
 };
