@@ -16,9 +16,9 @@ app.use(
 
 const client = new MongoClient(uri);
 
-client
-  .connect()
-  .then(() => {
+const connectToDatabase = async () => {
+  try {
+    await client.connect();
     const db = client.db("hrTest");
     const collection = db.collection("stock");
 
@@ -85,7 +85,12 @@ client
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error("Error connecting to MongoDB:", error);
-  });
+    app.use((req, res) => {
+      res.status(500).json({ error: "Error connecting to MongoDB" });
+    });
+  }
+};
+
+connectToDatabase();

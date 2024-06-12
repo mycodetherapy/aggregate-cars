@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Stock, MarkCount, ModelCount } from "../types";
+import { fetchMarks, fetchModels, fetchData } from "../api/api";
 
 interface StockState {
   data: Stock[];
@@ -9,6 +10,7 @@ interface StockState {
   selectedModels: string[];
   page: number;
   status: "idle" | "loading" | "failed";
+  error: string | null;
 }
 
 const initialState: StockState = {
@@ -19,32 +21,8 @@ const initialState: StockState = {
   selectedModels: [],
   page: 1,
   status: "idle",
+  error: null,
 };
-
-export const fetchMarks = createAsyncThunk("stock/fetchMarks", async () => {
-  const response = await fetch("http://localhost:5000/api/marks");
-  return (await response.json()) as MarkCount[];
-});
-
-export const fetchModels = createAsyncThunk(
-  "stock/fetchModels",
-  async (mark: string) => {
-    const response = await fetch(
-      `http://localhost:5000/api/models?mark=${mark}`
-    );
-    return (await response.json()) as ModelCount[];
-  }
-);
-
-export const fetchData = createAsyncThunk(
-  "stock/fetchData",
-  async ({ mark, models }: { mark: string; models: string[] }) => {
-    const response = await fetch(
-      `http://localhost:5000/api/stock?mark=${mark}&models=${models.join(",")}`
-    );
-    return (await response.json()) as Stock[];
-  }
-);
 
 const stockSlice = createSlice({
   name: "stock",
@@ -54,16 +32,22 @@ const stockSlice = createSlice({
       state.selectedMark = action.payload;
       state.selectedModels = [];
       state.page = 1;
+      state.status = "loading";
+      state.error = null;
     },
     setSelectedModels(state, action: PayloadAction<string[]>) {
       state.selectedModels = action.payload;
       state.page = 1;
+      state.status = "loading";
+      state.error = null;
     },
     removeModel(state, action: PayloadAction<string>) {
       state.selectedModels = state.selectedModels.filter(
         (model) => model !== action.payload
       );
       state.page = 1;
+      state.status = "loading";
+      state.error = null;
     },
     setPage(state, action: PayloadAction<number>) {
       state.page = action.payload;
@@ -81,8 +65,9 @@ const stockSlice = createSlice({
           state.selectedMark = action.payload[0].mark;
         }
       })
-      .addCase(fetchMarks.rejected, (state) => {
+      .addCase(fetchMarks.rejected, (state, action) => {
         state.status = "failed";
+        state.error = action.payload as string;
       })
       .addCase(fetchModels.pending, (state) => {
         state.status = "loading";
@@ -91,8 +76,9 @@ const stockSlice = createSlice({
         state.status = "idle";
         state.models = action.payload;
       })
-      .addCase(fetchModels.rejected, (state) => {
+      .addCase(fetchModels.rejected, (state, action) => {
         state.status = "failed";
+        state.error = action.payload as string;
       })
       .addCase(fetchData.pending, (state) => {
         state.status = "loading";
@@ -101,8 +87,9 @@ const stockSlice = createSlice({
         state.status = "idle";
         state.data = action.payload;
       })
-      .addCase(fetchData.rejected, (state) => {
+      .addCase(fetchData.rejected, (state, action) => {
         state.status = "failed";
+        state.error = action.payload as string;
       });
   },
 });
