@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "./redux/store";
-import { fetchMarks, fetchModels, fetchData } from "./slices/stockSlice";
+import {
+  fetchMarks,
+  fetchModels,
+  fetchData,
+  setPage,
+} from "./slices/stockSlice";
 import { MarkPanel } from "./components/MarkPanel/MarkPanel";
 import { ModelSelect } from "./components/ModelSelect/ModelSelect";
 import { StockTable } from "./components/StockTable/StockTable";
+import Box from "@mui/material/Box";
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { selectedMark, selectedModels } = useSelector(
+  const { selectedMark, selectedModels, page } = useSelector(
     (state: RootState) => state.stock
   );
-  const [page, setPage] = useState(1);
   const rowsPerPage = 20;
 
   useEffect(() => {
@@ -29,11 +34,11 @@ const App: React.FC = () => {
     event: React.ChangeEvent<unknown>,
     newPage: number
   ) => {
-    setPage(newPage);
+    dispatch(setPage(newPage));
   };
 
   return (
-    <div>
+    <Box sx={{ padding: "6px" }}>
       <MarkPanel />
       <ModelSelect />
       <StockTable
@@ -41,7 +46,7 @@ const App: React.FC = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
       />
-    </div>
+    </Box>
   );
 };
 

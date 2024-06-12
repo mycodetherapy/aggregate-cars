@@ -100,7 +100,7 @@ export const StyledTag = styled(Tag)<TagProps>(
 
 export const Listbox = styled("ul")(
   ({ theme }) => `
-    width: 300px;
+    width: 400px;
     margin: 2px 0 0;
     padding: 0;
     position: absolute;

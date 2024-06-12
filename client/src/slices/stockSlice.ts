@@ -7,6 +7,7 @@ interface StockState {
   models: ModelCount[];
   selectedMark: string;
   selectedModels: string[];
+  page: number;
   status: "idle" | "loading" | "failed";
 }
 
@@ -16,6 +17,7 @@ const initialState: StockState = {
   models: [],
   selectedMark: "",
   selectedModels: [],
+  page: 1,
   status: "idle",
 };
 
@@ -51,14 +53,20 @@ const stockSlice = createSlice({
     setSelectedMark(state, action: PayloadAction<string>) {
       state.selectedMark = action.payload;
       state.selectedModels = [];
+      state.page = 1;
     },
     setSelectedModels(state, action: PayloadAction<string[]>) {
       state.selectedModels = action.payload;
+      state.page = 1;
     },
     removeModel(state, action: PayloadAction<string>) {
       state.selectedModels = state.selectedModels.filter(
         (model) => model !== action.payload
       );
+      state.page = 1;
+    },
+    setPage(state, action: PayloadAction<number>) {
+      state.page = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -99,7 +107,7 @@ const stockSlice = createSlice({
   },
 });
 
-export const { setSelectedMark, setSelectedModels, removeModel } =
+export const { setSelectedMark, setSelectedModels, removeModel, setPage } =
   stockSlice.actions;
 
 export default stockSlice.reducer;
